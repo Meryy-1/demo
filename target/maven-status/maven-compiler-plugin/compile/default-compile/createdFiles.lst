@@ -1,0 +1,10 @@
+com\example\ClientController.class
+com\example\DatabaseTest.class
+com\example\ShowDatabaseData.class
+com\example\MenuController.class
+com\example\AdminController.class
+module-info.class
+com\example\App.class
+com\example\DatabaseManager.class
+com\example\MainController.class
+com\example\DatabaseManager$Table.class
