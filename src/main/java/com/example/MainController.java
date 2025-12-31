@@ -7,38 +7,38 @@ import javafx.scene.layout.VBox;
 import java.io.IOException;
 
 public class MainController {
-    
+
     @FXML
     private Button clientOptionBtn;
-    
+
     @FXML
     private Button adminOptionBtn;
-    
+
     @FXML
     private VBox clientSection;
-    
+
     @FXML
     private VBox adminSection;
-    
+
     @FXML
     private TextField clientNameField;
 
     @FXML
     private TextField clientNumberField;
-    
+
     @FXML
     private TextField adminIdField;
-    
+
     @FXML
     private PasswordField adminPasswordField;
-    
+
     @FXML
     private Label statusLabel;
-    
+
     @FXML
     private void toggleClientSection() {
         boolean isVisible = clientSection.isVisible();
-        
+
         if (isVisible) {
             // Close client section and show both options
             clientSection.setVisible(false);
@@ -54,15 +54,15 @@ public class MainController {
             adminOptionBtn.setVisible(false);
             adminOptionBtn.setManaged(false);
         }
-        
+
         // Clear status
         statusLabel.setText("");
     }
-    
+
     @FXML
     private void toggleAdminSection() {
         boolean isVisible = adminSection.isVisible();
-        
+
         if (isVisible) {
             // Close admin section and show both options
             adminSection.setVisible(false);
@@ -78,28 +78,28 @@ public class MainController {
             clientOptionBtn.setVisible(false);
             clientOptionBtn.setManaged(false);
         }
-        
+
         // Clear status
         statusLabel.setText("");
     }
-    
+
     @FXML
     private void handleClientLogin() {
         String name = clientNameField.getText().trim();
         String number = clientNumberField.getText().trim();
-        
+
         if (name.isEmpty()) {
             statusLabel.setText("Please enter your name");
             statusLabel.setStyle("-fx-text-fill: #dc3545;");
             return;
         }
-        
+
         if (number.isEmpty()) {
             statusLabel.setText("Please enter your number");
             statusLabel.setStyle("-fx-text-fill: #dc3545;");
             return;
         }
-        
+
         // Check if client exists in database
         if (DatabaseManager.clientExists(name, number)) {
             // Navigate to client page
@@ -115,7 +115,7 @@ public class MainController {
             }
         }
     }
-    
+
     private void navigateToClientPage(String name, String number) {
         try {
             FXMLLoader loader = App.setRootWithController("client");
@@ -127,18 +127,18 @@ public class MainController {
             e.printStackTrace();
         }
     }
-    
+
     @FXML
     private void handleAdminLogin() {
         String adminCode = adminIdField.getText().trim();
         String password = adminPasswordField.getText();
-        
+
         if (adminCode.isEmpty() || password.isEmpty()) {
             statusLabel.setText("Please enter both Admin Code and Password");
             statusLabel.setStyle("-fx-text-fill: #dc3545;");
             return;
         }
-        
+
         // Verify admin credentials from database
         if (DatabaseManager.verifyAdmin(adminCode, password)) {
             // Navigate to admin page
@@ -148,7 +148,7 @@ public class MainController {
             statusLabel.setStyle("-fx-text-fill: #dc3545;");
         }
     }
-    
+
     private void navigateToAdminPage(String adminCode) {
         try {
             FXMLLoader loader = App.setRootWithController("admin");
