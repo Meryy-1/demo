@@ -35,7 +35,7 @@ public class App extends Application {
         // Initialize database
         DatabaseManager.initialize();
         
-        scene = new Scene(loadFXML("main"), 500, 480);
+        scene = new Scene(loadFXML("main"), 700, 600);
         stage.setScene(scene);
         stage.setTitle("Restaurant Management System");
         stage.show();
