@@ -49,11 +49,23 @@ public class DatabaseManager {
                 "order_date TEXT NOT NULL" +
                 ")";
 
+        String createReservationsTable = "CREATE TABLE IF NOT EXISTS reservations (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "client_name TEXT NOT NULL, " +
+                "client_number TEXT NOT NULL, " +
+                "table_id INTEGER NOT NULL, " +
+                "party_size INTEGER NOT NULL, " +
+                "reservation_date TEXT NOT NULL, " +
+                "UNIQUE(client_name, client_number), " +
+                "FOREIGN KEY(table_id) REFERENCES tables(id)" +
+                ")";
+
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(createClientTable);
             stmt.execute(createAdminTable);
             stmt.execute(createTablesTable);
             stmt.execute(createOrdersTable);
+            stmt.execute(createReservationsTable);
 
             // Add default admin if table is empty
             addDefaultAdmin();
@@ -140,6 +152,50 @@ public class DatabaseManager {
 
         public boolean isAvailable() {
             return availability;
+        }
+    }
+
+    // Reservation class to represent reservation data
+    public static class Reservation {
+        private int id;
+        private String clientName;
+        private String clientNumber;
+        private int tableId;
+        private int partySize;
+        private String reservationDate;
+
+        public Reservation(int id, String clientName, String clientNumber,
+                int tableId, int partySize, String reservationDate) {
+            this.id = id;
+            this.clientName = clientName;
+            this.clientNumber = clientNumber;
+            this.tableId = tableId;
+            this.partySize = partySize;
+            this.reservationDate = reservationDate;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public String getClientName() {
+            return clientName;
+        }
+
+        public String getClientNumber() {
+            return clientNumber;
+        }
+
+        public int getTableId() {
+            return tableId;
+        }
+
+        public int getPartySize() {
+            return partySize;
+        }
+
+        public String getReservationDate() {
+            return reservationDate;
         }
     }
 
@@ -363,6 +419,125 @@ public class DatabaseManager {
         }
 
         return orders;
+    }
+
+    // Add a new reservation
+    public static boolean addReservation(String clientName, String clientNumber,
+            int tableId, int partySize) {
+        // First check if client already has a reservation
+        if (getClientReservation(clientName, clientNumber) != null) {
+            System.err.println("Client already has a reservation");
+            return false;
+        }
+
+        // Check if table is available
+        Table table = getTableById(tableId);
+        if (table == null || !table.isAvailable()) {
+            System.err.println("Table is not available");
+            return false;
+        }
+
+        // Reserve the table
+        if (!reserveTable(tableId)) {
+            return false;
+        }
+
+        // Add reservation record
+        String query = "INSERT INTO reservations (client_name, client_number, table_id, party_size, reservation_date) "
+                +
+                "VALUES (?, ?, ?, ?, datetime('now'))";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, clientName);
+            pstmt.setString(2, clientNumber);
+            pstmt.setInt(3, tableId);
+            pstmt.setInt(4, partySize);
+            pstmt.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            System.err.println("Error adding reservation: " + e.getMessage());
+            // Rollback table reservation
+            releaseTable(tableId);
+            return false;
+        }
+    }
+
+    // Get reservation for a specific client
+    public static Reservation getClientReservation(String clientName, String clientNumber) {
+        String query = "SELECT * FROM reservations WHERE client_name = ? AND client_number = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, clientName);
+            pstmt.setString(2, clientNumber);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return new Reservation(
+                            rs.getInt("id"),
+                            rs.getString("client_name"),
+                            rs.getString("client_number"),
+                            rs.getInt("table_id"),
+                            rs.getInt("party_size"),
+                            rs.getString("reservation_date"));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting client reservation: " + e.getMessage());
+        }
+
+        return null;
+    }
+
+    // Cancel a client's reservation
+    public static boolean cancelClientReservation(String clientName, String clientNumber) {
+        Reservation reservation = getClientReservation(clientName, clientNumber);
+
+        if (reservation == null) {
+            return false;
+        }
+
+        // Delete reservation record
+        String query = "DELETE FROM reservations WHERE client_name = ? AND client_number = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, clientName);
+            pstmt.setString(2, clientNumber);
+            int rowsAffected = pstmt.executeUpdate();
+
+            if (rowsAffected > 0) {
+                // Release the table
+                releaseTable(reservation.getTableId());
+                return true;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error cancelling reservation: " + e.getMessage());
+        }
+
+        return false;
+    }
+
+    // Get all reservations (for admin view if needed)
+    public static java.util.List<Reservation> getAllReservations() {
+        java.util.List<Reservation> reservations = new java.util.ArrayList<>();
+        String query = "SELECT * FROM reservations ORDER BY reservation_date DESC";
+
+        try (Statement stmt = connection.createStatement();
+                ResultSet rs = stmt.executeQuery(query)) {
+
+            while (rs.next()) {
+                reservations.add(new Reservation(
+                        rs.getInt("id"),
+                        rs.getString("client_name"),
+                        rs.getString("client_number"),
+                        rs.getInt("table_id"),
+                        rs.getInt("party_size"),
+                        rs.getString("reservation_date")));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting all reservations: " + e.getMessage());
+        }
+
+        return reservations;
     }
 
     // Close database connection

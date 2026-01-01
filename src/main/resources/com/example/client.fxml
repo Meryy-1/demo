@@ -41,10 +41,6 @@
                 <!-- Reservations Section -->
                 <Button text="📅 Make Reservation" styleClass="option-btn" 
                         onAction="#handleReservation" prefWidth="300"/>
-                
-                <!-- Profile Section -->
-                <Button text="👤 My Profile" styleClass="option-btn" 
-                        onAction="#handleProfile" prefWidth="300"/>
             </VBox>
         </VBox>
         

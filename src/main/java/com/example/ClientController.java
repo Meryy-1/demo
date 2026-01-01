@@ -32,6 +32,12 @@ public class ClientController {
     @FXML
     private void handleLogout() {
         try {
+            // Clear client's reservation when logging out
+            DatabaseManager.cancelClientReservation(clientName, clientNumber);
+
+            // Clear current client info
+            App.setCurrentClient(null, null);
+
             App.setRoot("main");
         } catch (IOException e) {
             statusLabel.setText("Error logging out");
@@ -66,8 +72,15 @@ public class ClientController {
 
     @FXML
     private void handleReservation() {
-        statusLabel.setText("Reservation feature coming soon...");
-        statusLabel.setStyle("-fx-text-fill: #6c757d;");
+        try {
+            FXMLLoader loader = App.setRootWithController("reservation");
+            ReservationController controller = loader.getController();
+            controller.setClientInfo(clientName, clientNumber);
+        } catch (Exception e) {
+            statusLabel.setText("Error loading reservations");
+            statusLabel.setStyle("-fx-text-fill: #dc3545;");
+            e.printStackTrace();
+        }
     }
 
     @FXML
