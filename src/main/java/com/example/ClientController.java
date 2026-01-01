@@ -1,6 +1,7 @@
 package com.example;
 
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
 import java.io.IOException;
 
@@ -52,8 +53,15 @@ public class ClientController {
 
     @FXML
     private void handleMyOrders() {
-        statusLabel.setText("Orders feature coming soon...");
-        statusLabel.setStyle("-fx-text-fill: #6c757d;");
+        try {
+            FXMLLoader loader = App.setRootWithController("orders");
+            OrderViewController controller = loader.getController();
+            controller.setClientInfo(clientName, clientNumber);
+        } catch (Exception e) {
+            statusLabel.setText("Error loading orders");
+            statusLabel.setStyle("-fx-text-fill: #dc3545;");
+            e.printStackTrace();
+        }
     }
 
     @FXML

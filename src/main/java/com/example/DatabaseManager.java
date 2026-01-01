@@ -39,10 +39,21 @@ public class DatabaseManager {
                 "availability INTEGER DEFAULT 1" +
                 ")";
 
+        String createOrdersTable = "CREATE TABLE IF NOT EXISTS orders (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "client_name TEXT NOT NULL, " +
+                "client_number TEXT NOT NULL, " +
+                "item_name TEXT NOT NULL, " +
+                "quantity INTEGER NOT NULL, " +
+                "price REAL NOT NULL, " +
+                "order_date TEXT NOT NULL" +
+                ")";
+
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(createClientTable);
             stmt.execute(createAdminTable);
             stmt.execute(createTablesTable);
+            stmt.execute(createOrdersTable);
 
             // Add default admin if table is empty
             addDefaultAdmin();
@@ -275,6 +286,83 @@ public class DatabaseManager {
             e.printStackTrace();
             return false;
         }
+    }
+
+    // Add new order to database
+    public static boolean addOrder(String clientName, String clientNumber, String itemName,
+            int quantity, double price, String orderDate) {
+        String query = "INSERT INTO orders (client_name, client_number, item_name, quantity, price, order_date) " +
+                "VALUES (?, ?, ?, ?, ?, ?)";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, clientName);
+            pstmt.setString(2, clientNumber);
+            pstmt.setString(3, itemName);
+            pstmt.setInt(4, quantity);
+            pstmt.setDouble(5, price);
+            pstmt.setString(6, orderDate);
+            pstmt.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            System.err.println("Error adding order: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // Get all orders for a specific client
+    public static java.util.List<Order> getClientOrders(String clientName, String clientNumber) {
+        java.util.List<Order> orders = new java.util.ArrayList<>();
+        String query = "SELECT * FROM orders WHERE client_name = ? AND client_number = ? ORDER BY order_date DESC";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, clientName);
+            pstmt.setString(2, clientNumber);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    orders.add(new Order(
+                            rs.getInt("id"),
+                            rs.getString("client_name"),
+                            rs.getString("client_number"),
+                            rs.getString("item_name"),
+                            rs.getInt("quantity"),
+                            rs.getDouble("price"),
+                            rs.getString("order_date")));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting client orders: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return orders;
+    }
+
+    // Get all orders (for admin view if needed)
+    public static java.util.List<Order> getAllOrders() {
+        java.util.List<Order> orders = new java.util.ArrayList<>();
+        String query = "SELECT * FROM orders ORDER BY order_date DESC";
+
+        try (Statement stmt = connection.createStatement();
+                ResultSet rs = stmt.executeQuery(query)) {
+
+            while (rs.next()) {
+                orders.add(new Order(
+                        rs.getInt("id"),
+                        rs.getString("client_name"),
+                        rs.getString("client_number"),
+                        rs.getString("item_name"),
+                        rs.getInt("quantity"),
+                        rs.getDouble("price"),
+                        rs.getString("order_date")));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting all orders: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return orders;
     }
 
     // Close database connection

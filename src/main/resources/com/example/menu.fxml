@@ -15,7 +15,13 @@
       spacing="20"
       style="-fx-padding: 20px;">
     
-    <StackPane prefHeight="250" styleClass="menu-header">
+    <!-- Back Button Top Left -->
+    <HBox alignment="TOP_LEFT" style="-fx-padding: 0 0 10px 0;">
+        <Button text="← Back" onAction="#handleBack" 
+                style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 10px 20px; -fx-cursor: hand; -fx-background-radius: 5px;"/>
+    </HBox>
+    
+    <StackPane prefHeight="200" styleClass="menu-header">
         <Label text="Our Menu" style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: white; -fx-effect: dropshadow(gaussian, black, 10, 0.5, 0, 0);"/>
     </StackPane>
     
@@ -83,9 +89,7 @@
         
     </FlowPane>
     
-    <Button text="Back" onAction="#handleBack"/>
-    
-    <Label fx:id="statusLabel" text=""/>
+    <Label fx:id="statusLabel" text="" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 10px;"/>
     
 </VBox>
 
