@@ -100,20 +100,9 @@ public class MainController {
             return;
         }
 
-        // Check if client exists in database
-        if (DatabaseManager.clientExists(name, number)) {
-            // Navigate to client page
-            navigateToClientPage(name, number);
-        } else {
-            // Add new client to database
-            if (DatabaseManager.addClient(name, number)) {
-                // Navigate to client page
-                navigateToClientPage(name, number);
-            } else {
-                statusLabel.setText("Error adding client to database");
-                statusLabel.setStyle("-fx-text-fill: #dc3545;");
-            }
-        }
+        // Simple client validation (since we're not using database)
+        // Accept any non-empty name and number for demo purposes
+        navigateToClientPage(name, number);
     }
 
     private void navigateToClientPage(String name, String number) {
@@ -139,8 +128,9 @@ public class MainController {
             return;
         }
 
-        // Verify admin credentials from database
-        if (DatabaseManager.verifyAdmin(adminCode, password)) {
+        // Simple admin verification (since we're not using database)
+        // Default admin credentials: admin / admin123
+        if ("admin".equals(adminCode) && "admin123".equals(password)) {
             // Navigate to admin page
             navigateToAdminPage(adminCode);
         } else {

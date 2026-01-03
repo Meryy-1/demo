@@ -18,6 +18,76 @@ public class DatabaseManager {
         }
     }
 
+    // Migrate database schema for existing databases
+    private static void migrateDatabase() {
+        try (Statement stmt = connection.createStatement()) {
+            // Check if order_id column exists, if not add it
+            ResultSet rs = stmt.executeQuery("PRAGMA table_info(orders)");
+            boolean hasOrderId = false;
+            boolean hasTableNumber = false;
+            boolean hasStatus = false;
+
+            while (rs.next()) {
+                String columnName = rs.getString("name");
+                if ("order_id".equals(columnName)) hasOrderId = true;
+                if ("table_number".equals(columnName)) hasTableNumber = true;
+                if ("status".equals(columnName)) hasStatus = true;
+            }
+
+            // Add missing columns
+            if (!hasOrderId) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN order_id INTEGER DEFAULT 1");
+                System.out.println("Added order_id column to orders table");
+            }
+            if (!hasTableNumber) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN table_number INTEGER DEFAULT 0");
+                System.out.println("Added table_number column to orders table");
+            }
+            if (!hasStatus) {
+                stmt.execute("ALTER TABLE orders ADD COLUMN status TEXT DEFAULT 'Pending'");
+                System.out.println("Added status column to orders table");
+            }
+
+            // Populate order_id for existing records if needed
+            if (hasOrderId) {
+                // Assign sequential order_ids to existing orders
+                // Group by client_name, client_number, and order_date
+                ResultSet existingOrders = stmt.executeQuery(
+                    "SELECT id, client_name, client_number, order_date FROM orders ORDER BY client_name, client_number, order_date");
+
+                int currentOrderId = 1;
+                String lastClient = "";
+                String lastDate = "";
+
+                while (existingOrders.next()) {
+                    String clientKey = existingOrders.getString("client_name") + "|" +
+                                     existingOrders.getString("client_number") + "|" +
+                                     existingOrders.getString("order_date");
+
+                    if (!clientKey.equals(lastClient + "|" + lastDate)) {
+                        currentOrderId++;
+                    }
+
+                    int orderDbId = existingOrders.getInt("id");
+                    PreparedStatement updateStmt = connection.prepareStatement(
+                        "UPDATE orders SET order_id = ? WHERE id = ?");
+                    updateStmt.setInt(1, currentOrderId);
+                    updateStmt.setInt(2, orderDbId);
+                    updateStmt.executeUpdate();
+                    updateStmt.close();
+
+                    lastClient = existingOrders.getString("client_name") + "|" +
+                               existingOrders.getString("client_number");
+                    lastDate = existingOrders.getString("order_date");
+                }
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error migrating database: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     // Create tables if they don't exist
     private static void createTables() {
         String createClientTable = "CREATE TABLE IF NOT EXISTS client (" +
@@ -41,12 +111,15 @@ public class DatabaseManager {
 
         String createOrdersTable = "CREATE TABLE IF NOT EXISTS orders (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "order_id INTEGER NOT NULL, " +
                 "client_name TEXT NOT NULL, " +
                 "client_number TEXT NOT NULL, " +
+                "table_number INTEGER DEFAULT 0, " +
                 "item_name TEXT NOT NULL, " +
                 "quantity INTEGER NOT NULL, " +
                 "price REAL NOT NULL, " +
-                "order_date TEXT NOT NULL" +
+                "order_date TEXT NOT NULL, " +
+                "status TEXT DEFAULT 'Pending'" +
                 ")";
 
         String createReservationsTable = "CREATE TABLE IF NOT EXISTS reservations (" +
@@ -60,18 +133,32 @@ public class DatabaseManager {
                 "FOREIGN KEY(table_id) REFERENCES tables(id)" +
                 ")";
 
+        String createMenuItemsTable = "CREATE TABLE IF NOT EXISTS menu_items (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "name TEXT NOT NULL UNIQUE, " +
+                "price REAL NOT NULL, " +
+                "available INTEGER DEFAULT 1" +
+                ")";
+
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(createClientTable);
             stmt.execute(createAdminTable);
             stmt.execute(createTablesTable);
             stmt.execute(createOrdersTable);
             stmt.execute(createReservationsTable);
+            stmt.execute(createMenuItemsTable);
+
+            // Migrate existing database if needed
+            migrateDatabase();
 
             // Add default admin if table is empty
             addDefaultAdmin();
 
             // Add default tables if none exist
             addDefaultTables();
+
+            // Add default menu items if none exist
+            addDefaultMenuItems();
         } catch (SQLException e) {
             System.err.println("Error creating tables: " + e.getMessage());
             e.printStackTrace();
@@ -127,6 +214,129 @@ public class DatabaseManager {
             }
         } catch (SQLException e) {
             System.err.println("Error adding default tables: " + e.getMessage());
+        }
+    }
+
+    // Add default menu items if none exist
+    private static void addDefaultMenuItems() {
+        String checkQuery = "SELECT COUNT(*) FROM menu_items";
+
+        try (Statement stmt = connection.createStatement();
+                ResultSet rs = stmt.executeQuery(checkQuery)) {
+
+            if (rs.next() && rs.getInt(1) == 0) {
+                // No menu items exist, add default ones
+                String insertQuery = "INSERT INTO menu_items (name, price, available) VALUES (?, ?, ?)";
+
+                try (PreparedStatement pstmt = connection.prepareStatement(insertQuery)) {
+                    // Add default menu items
+                    Object[][] menuItems = {
+                        { "Spicy Potato", 12.00, 1 },
+                        { "Pasta", 15.00, 1 },
+                        { "Garlic Bread", 8.00, 1 },
+                        { "Burger", 14.00, 1 },
+                        { "Pizza", 18.00, 1 },
+                        { "Taco", 10.00, 1 }
+                    };
+
+                    for (Object[] item : menuItems) {
+                        pstmt.setString(1, (String) item[0]);
+                        pstmt.setDouble(2, (Double) item[1]);
+                        pstmt.setInt(3, (Integer) item[2]);
+                        pstmt.executeUpdate();
+                    }
+
+                    System.out.println("Default menu items created (6 items)");
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error adding default menu items: " + e.getMessage());
+        }
+    }
+
+    // Menu Item CRUD Operations
+
+    // Get all menu items
+    public static java.util.List<MenuItem> getAllMenuItems() {
+        java.util.List<MenuItem> menuItems = new java.util.ArrayList<>();
+        String query = "SELECT id, name, price, available FROM menu_items ORDER BY name";
+
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            while (rs.next()) {
+                menuItems.add(new MenuItem(
+                    rs.getInt("id"),
+                    rs.getString("name"),
+                    rs.getDouble("price"),
+                    rs.getInt("available") == 1
+                ));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting menu items: " + e.getMessage());
+        }
+
+        return menuItems;
+    }
+
+    // Add new menu item
+    public static boolean addMenuItem(String name, double price, boolean available) {
+        String query = "INSERT INTO menu_items (name, price, available) VALUES (?, ?, ?)";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, name.trim());
+            pstmt.setDouble(2, price);
+            pstmt.setInt(3, available ? 1 : 0);
+            pstmt.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            System.err.println("Error adding menu item: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // Update menu item
+    public static boolean updateMenuItem(int id, String newName, double price, boolean available) {
+        String query = "UPDATE menu_items SET name = ?, price = ?, available = ? WHERE id = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, newName.trim());
+            pstmt.setDouble(2, price);
+            pstmt.setInt(3, available ? 1 : 0);
+            pstmt.setInt(4, id);
+            int rowsAffected = pstmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            System.err.println("Error updating menu item: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // Delete menu item
+    public static boolean deleteMenuItem(int id) {
+        String query = "DELETE FROM menu_items WHERE id = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setInt(1, id);
+            int rowsAffected = pstmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            System.err.println("Error deleting menu item: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // Toggle menu item availability
+    public static boolean toggleMenuItemAvailability(int id) {
+        String query = "UPDATE menu_items SET available = CASE WHEN available = 1 THEN 0 ELSE 1 END WHERE id = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setInt(1, id);
+            int rowsAffected = pstmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            System.err.println("Error toggling menu item availability: " + e.getMessage());
+            return false;
         }
     }
 
@@ -347,22 +557,85 @@ public class DatabaseManager {
     // Add new order to database
     public static boolean addOrder(String clientName, String clientNumber, String itemName,
             int quantity, double price, String orderDate) {
-        String query = "INSERT INTO orders (client_name, client_number, item_name, quantity, price, order_date) " +
-                "VALUES (?, ?, ?, ?, ?, ?)";
+        // Get next order_id (group orders by client and date)
+        int orderId = getNextOrderId(clientName, clientNumber, orderDate);
+
+        // Get table number from reservation if exists
+        int tableNumber = getClientTableNumber(clientName, clientNumber);
+
+        System.out.println("Adding order for " + clientName + " " + clientNumber + " at table " + tableNumber);
+
+        String query = "INSERT INTO orders (order_id, client_name, client_number, table_number, item_name, quantity, price, order_date, status) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement pstmt = connection.prepareStatement(query)) {
-            pstmt.setString(1, clientName);
-            pstmt.setString(2, clientNumber);
-            pstmt.setString(3, itemName);
-            pstmt.setInt(4, quantity);
-            pstmt.setDouble(5, price);
-            pstmt.setString(6, orderDate);
+            pstmt.setInt(1, orderId);
+            pstmt.setString(2, clientName);
+            pstmt.setString(3, clientNumber);
+            pstmt.setInt(4, tableNumber);
+            pstmt.setString(5, itemName);
+            pstmt.setInt(6, quantity);
+            pstmt.setDouble(7, price);
+            pstmt.setString(8, orderDate);
+            pstmt.setString(9, Order.STATUS_PENDING);
             pstmt.executeUpdate();
             return true;
         } catch (SQLException e) {
             System.err.println("Error adding order: " + e.getMessage());
             e.printStackTrace();
             return false;
+        }
+    }
+
+    // Get next order ID for grouping orders
+    private static int getNextOrderId(String clientName, String clientNumber, String orderDate) {
+        // For simplicity, use a sequential order ID starting from 1
+        String query = "SELECT MAX(order_id) as max_id FROM orders";
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+            if (rs.next()) {
+                int maxId = rs.getInt("max_id");
+                return maxId + 1;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting next order ID: " + e.getMessage());
+        }
+        return 1; // Start with 1 if no orders exist
+    }
+
+    // Get table number from client's reservation (public for testing)
+    public static int getClientTableNumber(String clientName, String clientNumber) {
+        String query = "SELECT table_id FROM reservations WHERE TRIM(client_name) = TRIM(?) AND TRIM(client_number) = TRIM(?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, clientName);
+            pstmt.setString(2, clientNumber);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    int tableId = rs.getInt("table_id");
+                    System.out.println("Found reservation for '" + clientName + "' '" + clientNumber + "' at table " + tableId);
+                    return tableId;
+                } else {
+                    System.out.println("No reservation found for '" + clientName + "' '" + clientNumber + "'");
+                    // Debug: list all reservations
+                    listAllReservations();
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting client table number: " + e.getMessage());
+        }
+        return 0; // No reservation
+    }
+
+    // Debug method to list all reservations
+    private static void listAllReservations() {
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM reservations")) {
+            System.out.println("All reservations in database:");
+            while (rs.next()) {
+                System.out.println("  " + rs.getString("client_name") + " " + rs.getString("client_number") + " -> table " + rs.getInt("table_id"));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error listing reservations: " + e.getMessage());
         }
     }
 
@@ -379,12 +652,15 @@ public class DatabaseManager {
                 while (rs.next()) {
                     orders.add(new Order(
                             rs.getInt("id"),
+                            rs.getInt("order_id"),
                             rs.getString("client_name"),
                             rs.getString("client_number"),
+                            rs.getInt("table_number"),
                             rs.getString("item_name"),
                             rs.getInt("quantity"),
                             rs.getDouble("price"),
-                            rs.getString("order_date")));
+                            rs.getString("order_date"),
+                            rs.getString("status")));
                 }
             }
         } catch (SQLException e) {
@@ -406,12 +682,15 @@ public class DatabaseManager {
             while (rs.next()) {
                 orders.add(new Order(
                         rs.getInt("id"),
+                        rs.getInt("order_id"),
                         rs.getString("client_name"),
                         rs.getString("client_number"),
+                        rs.getInt("table_number"),
                         rs.getString("item_name"),
                         rs.getInt("quantity"),
                         rs.getDouble("price"),
-                        rs.getString("order_date")));
+                        rs.getString("order_date"),
+                        rs.getString("status")));
             }
         } catch (SQLException e) {
             System.err.println("Error getting all orders: " + e.getMessage());
@@ -421,11 +700,91 @@ public class DatabaseManager {
         return orders;
     }
 
+    // Get order summaries (grouped by order_id)
+    public static java.util.List<OrderSummary> getOrderSummaries() {
+        java.util.List<OrderSummary> summaries = new java.util.ArrayList<>();
+        String query = "SELECT order_id, table_number, order_date, client_name, client_number, " +
+                      "SUM(quantity * price) as total, status " +
+                      "FROM orders " +
+                      "GROUP BY order_id, table_number, order_date, client_name, client_number, status " +
+                      "ORDER BY order_id ASC";
+
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            while (rs.next()) {
+                int orderId = rs.getInt("order_id");
+                int tableNumber = rs.getInt("table_number");
+                String date = rs.getString("order_date");
+                String clientName = rs.getString("client_name");
+                String clientNumber = rs.getString("client_number");
+                double total = rs.getDouble("total");
+                String status = rs.getString("status");
+
+                // Get order items for this order
+                java.util.List<Order> orderItems = getOrdersByOrderId(orderId);
+
+                summaries.add(new OrderSummary(orderId, tableNumber, date, total, status,
+                                             clientName, clientNumber, orderItems));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting order summaries: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return summaries;
+    }
+
+    // Get orders by order_id
+    private static java.util.List<Order> getOrdersByOrderId(int orderId) {
+        java.util.List<Order> orders = new java.util.ArrayList<>();
+        String query = "SELECT * FROM orders WHERE order_id = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setInt(1, orderId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    orders.add(new Order(
+                            rs.getInt("id"),
+                            rs.getInt("order_id"),
+                            rs.getString("client_name"),
+                            rs.getString("client_number"),
+                            rs.getInt("table_number"),
+                            rs.getString("item_name"),
+                            rs.getInt("quantity"),
+                            rs.getDouble("price"),
+                            rs.getString("order_date"),
+                            rs.getString("status")));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting orders by order ID: " + e.getMessage());
+        }
+
+        return orders;
+    }
+
+    // Update order status
+    public static boolean updateOrderStatus(int orderId, String status) {
+        String query = "UPDATE orders SET status = ? WHERE order_id = ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(query)) {
+            pstmt.setString(1, status);
+            pstmt.setInt(2, orderId);
+            int rowsAffected = pstmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            System.err.println("Error updating order status: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     // Add a new reservation
     public static boolean addReservation(String clientName, String clientNumber,
             int tableId, int partySize) {
         // First check if client already has a reservation
-        if (getClientReservation(clientName, clientNumber) != null) {
+        if (getClientReservation(clientName.trim(), clientNumber.trim()) != null) {
             System.err.println("Client already has a reservation");
             return false;
         }
@@ -448,11 +807,12 @@ public class DatabaseManager {
                 "VALUES (?, ?, ?, ?, datetime('now'))";
 
         try (PreparedStatement pstmt = connection.prepareStatement(query)) {
-            pstmt.setString(1, clientName);
-            pstmt.setString(2, clientNumber);
+            pstmt.setString(1, clientName.trim());
+            pstmt.setString(2, clientNumber.trim());
             pstmt.setInt(3, tableId);
             pstmt.setInt(4, partySize);
             pstmt.executeUpdate();
+            System.out.println("Added reservation for " + clientName.trim() + " " + clientNumber.trim() + " at table " + tableId);
             return true;
         } catch (SQLException e) {
             System.err.println("Error adding reservation: " + e.getMessage());

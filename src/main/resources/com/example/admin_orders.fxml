@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns="http://javafx.com/javafx/8.0.171"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.AdminOrdersController"
+            stylesheets="@styles.css">
+
+    <top>
+        <VBox alignment="CENTER" spacing="10" style="-fx-background-color: #3498db; -fx-padding: 20px;">
+            <Label text="Manage Orders"
+                   style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: white;"/>
+            <HBox alignment="CENTER" spacing="10">
+                <Button text="Back to Admin" onAction="#handleBack"
+                        style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8px 15px; -fx-cursor: hand;"/>
+            </HBox>
+        </VBox>
+    </top>
+
+    <center>
+        <SplitPane fx:id="splitPane" dividerPositions="0.4" BorderPane.alignment="CENTER">
+            <!-- Left side - Orders Summary -->
+            <VBox spacing="10" style="-fx-padding: 10px;">
+                <Label text="Orders" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+                <TableView fx:id="ordersTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="orderIdColumn" text="Order ID" prefWidth="80" />
+                        <TableColumn fx:id="tableNumberColumn" text="Table" prefWidth="60" />
+                        <TableColumn fx:id="dateColumn" text="Date" prefWidth="120" />
+                        <TableColumn fx:id="totalColumn" text="Total" prefWidth="80" />
+                        <TableColumn fx:id="statusColumn" text="Status" prefWidth="80" />
+                    </columns>
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                    </columnResizePolicy>
+                </TableView>
+            </VBox>
+
+            <!-- Right side - Order Details -->
+            <VBox spacing="10" style="-fx-padding: 10px;">
+                <Label fx:id="orderDetailsLabel" text="Order Details"
+                       style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+                <TableView fx:id="orderItemsTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="itemNameColumn" text="Item Name" prefWidth="150" />
+                        <TableColumn fx:id="quantityColumn" text="Quantity" prefWidth="80" />
+                        <TableColumn fx:id="priceColumn" text="Price" prefWidth="80" />
+                        <TableColumn fx:id="subtotalColumn" text="Subtotal" prefWidth="80" />
+                    </columns>
+                    <columnResizePolicy>
+                        <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                    </columnResizePolicy>
+                </TableView>
+                <Label fx:id="totalAmountLabel" text="Total Amount: $0.00"
+                       style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+                <HBox spacing="10" alignment="CENTER">
+                    <Button fx:id="markCompletedButton" text="✅ Mark as Completed"
+                            onAction="#handleMarkCompleted"
+                            style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8px 15px; -fx-cursor: hand;"/>
+                    <Button fx:id="cancelOrderButton" text="❌ Cancel Order"
+                            onAction="#handleCancelOrder"
+                            style="-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8px 15px; -fx-cursor: hand;"/>
+                </HBox>
+            </VBox>
+        </SplitPane>
+    </center>
+
+    <bottom>
+        <VBox alignment="CENTER" style="-fx-padding: 10px; -fx-background-color: #ecf0f1;">
+            <Label fx:id="statusLabel" text="Select an order to view details"
+                   style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+        </VBox>
+    </bottom>
+
+</BorderPane>
