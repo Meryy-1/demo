@@ -1,6 +1,7 @@
 package com.example;
 
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
 import java.io.IOException;
 
@@ -33,31 +34,58 @@ public class AdminController {
 
     @FXML
     private void handleManageClients() {
-        statusLabel.setText("Manage Clients feature coming soon...");
-        statusLabel.setStyle("-fx-text-fill: #6c757d;");
+        try {
+            App.setRoot("admin_clients");
+        } catch (IOException e) {
+            statusLabel.setText("Error opening Manage Clients");
+            statusLabel.setStyle("-fx-text-fill: #dc3545;");
+            e.printStackTrace();
+        }
     }
 
     @FXML
     private void handleManageOrders() {
-        statusLabel.setText("Manage Orders feature coming soon...");
-        statusLabel.setStyle("-fx-text-fill: #6c757d;");
+        try {
+            App.setRoot("admin_orders");
+        } catch (IOException e) {
+            statusLabel.setText("Error opening Manage Orders");
+            statusLabel.setStyle("-fx-text-fill: #dc3545;");
+            e.printStackTrace();
+        }
     }
 
     @FXML
     private void handleManageMenu() {
-        statusLabel.setText("Manage Menu feature coming soon...");
-        statusLabel.setStyle("-fx-text-fill: #6c757d;");
+        try {
+            App.setRoot("admin_menu");
+        } catch (IOException e) {
+            statusLabel.setText("Error opening Manage Menu");
+            statusLabel.setStyle("-fx-text-fill: #dc3545;");
+            e.printStackTrace();
+        }
     }
 
     @FXML
     private void handleViewReports() {
-        statusLabel.setText("View Reports feature coming soon...");
-        statusLabel.setStyle("-fx-text-fill: #6c757d;");
+        try {
+            App.setRoot("admin_reports");
+        } catch (IOException e) {
+            statusLabel.setText("Error opening View Reports");
+            statusLabel.setStyle("-fx-text-fill: #dc3545;");
+            e.printStackTrace();
+        }
     }
 
     @FXML
     private void handleSettings() {
-        statusLabel.setText("Settings feature coming soon...");
-        statusLabel.setStyle("-fx-text-fill: #6c757d;");
+        try {
+            FXMLLoader loader = App.setRootWithController("admin_settings");
+            AdminSettingsController controller = loader.getController();
+            controller.setAdminCode(adminCode);
+        } catch (IOException e) {
+            statusLabel.setText("Error opening Settings");
+            statusLabel.setStyle("-fx-text-fill: #dc3545;");
+            e.printStackTrace();
+        }
     }
 }
