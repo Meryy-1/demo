@@ -71,8 +71,9 @@ public class DatabaseManager {
                 stmt.execute("ALTER TABLE menu_items ADD COLUMN image_data BLOB");
                 System.out.println("Added image_data column to menu_items table");
             }
-            
-            // Remove old image_path column if it exists (can't do in SQLite, just ignore it)
+
+            // Remove old image_path column if it exists (can't do in SQLite, just ignore
+            // it)
             if (hasImagePath && !hasImageData) {
                 System.out.println("Note: image_path column exists but will use image_data instead");
             }

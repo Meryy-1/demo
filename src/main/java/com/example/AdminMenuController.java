@@ -83,13 +83,15 @@ public class AdminMenuController {
     @FXML
     void handleEdit() {
         MenuItem selectedItem = menuTable.getSelectionModel().getSelectedItem();
-        if (selectedItem == null) return;
+        if (selectedItem == null)
+            return;
 
         Dialog<MenuItem> dialog = createMenuItemDialog("Edit Menu Item", selectedItem);
         Optional<MenuItem> result = dialog.showAndWait();
 
         result.ifPresent(item -> {
-            if (DatabaseManager.updateMenuItem(selectedItem.getId(), item.getName(), item.getPrice(), item.isAvailable(), item.getImageData())) {
+            if (DatabaseManager.updateMenuItem(selectedItem.getId(), item.getName(), item.getPrice(),
+                    item.isAvailable(), item.getImageData())) {
                 loadMenu();
                 statusLabel.setText("Menu item updated successfully");
             } else {
@@ -101,7 +103,8 @@ public class AdminMenuController {
     @FXML
     void handleDelete() {
         MenuItem selectedItem = menuTable.getSelectionModel().getSelectedItem();
-        if (selectedItem == null) return;
+        if (selectedItem == null)
+            return;
 
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("Delete Menu Item");
@@ -122,7 +125,8 @@ public class AdminMenuController {
     @FXML
     void handleToggle() {
         MenuItem selectedItem = menuTable.getSelectionModel().getSelectedItem();
-        if (selectedItem == null) return;
+        if (selectedItem == null)
+            return;
 
         String action = selectedItem.isAvailable() ? "make unavailable" : "make available";
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -158,15 +162,14 @@ public class AdminMenuController {
         CheckBox availableCheckBox = new CheckBox("Available");
         Label imageLabel = new Label("No image selected");
         Button browseButton = new Button("Browse Image...");
-        
-        final byte[][] selectedImageData = {null}; // Array to hold image data
+
+        final byte[][] selectedImageData = { null }; // Array to hold image data
 
         browseButton.setOnAction(e -> {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Select Menu Item Image");
             fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")
-            );
+                    new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif"));
             File selectedFile = fileChooser.showOpenDialog(dialog.getOwner());
             if (selectedFile != null) {
                 try (FileInputStream fis = new FileInputStream(selectedFile)) {

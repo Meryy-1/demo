@@ -29,22 +29,61 @@ public class MenuItem {
     }
 
     // Property getters for JavaFX TableView binding
-    public SimpleIntegerProperty idProperty() { return id; }
-    public SimpleStringProperty nameProperty() { return name; }
-    public SimpleDoubleProperty priceProperty() { return price; }
-    public SimpleBooleanProperty availableProperty() { return available; }
+    public SimpleIntegerProperty idProperty() {
+        return id;
+    }
+
+    public SimpleStringProperty nameProperty() {
+        return name;
+    }
+
+    public SimpleDoubleProperty priceProperty() {
+        return price;
+    }
+
+    public SimpleBooleanProperty availableProperty() {
+        return available;
+    }
 
     // Regular getters
-    public int getId() { return id.get(); }
-    public String getName() { return name.get(); }
-    public double getPrice() { return price.get(); }
-    public boolean isAvailable() { return available.get(); }
-    public byte[] getImageData() { return imageData; }
+    public int getId() {
+        return id.get();
+    }
+
+    public String getName() {
+        return name.get();
+    }
+
+    public double getPrice() {
+        return price.get();
+    }
+
+    public boolean isAvailable() {
+        return available.get();
+    }
+
+    public byte[] getImageData() {
+        return imageData;
+    }
 
     // Regular setters
-    public void setId(int id) { this.id.set(id); }
-    public void setName(String name) { this.name.set(name); }
-    public void setPrice(double price) { this.price.set(price); }
-    public void setAvailable(boolean available) { this.available.set(available); }
-    public void setImageData(byte[] imageData) { this.imageData = imageData; }
+    public void setId(int id) {
+        this.id.set(id);
+    }
+
+    public void setName(String name) {
+        this.name.set(name);
+    }
+
+    public void setPrice(double price) {
+        this.price.set(price);
+    }
+
+    public void setAvailable(boolean available) {
+        this.available.set(available);
+    }
+
+    public void setImageData(byte[] imageData) {
+        this.imageData = imageData;
+    }
 }

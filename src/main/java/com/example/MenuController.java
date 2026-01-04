@@ -50,7 +50,7 @@ public class MenuController {
         VBox card = new VBox(10);
         card.setAlignment(Pos.CENTER);
         card.setStyle("-fx-background-color: white; -fx-padding: 15; -fx-border-color: #ddd; " +
-                     "-fx-border-radius: 8; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);");
+                "-fx-border-radius: 8; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);");
         card.setPrefWidth(200);
         card.setPrefHeight(250);
 
@@ -59,7 +59,7 @@ public class MenuController {
         imageView.setFitWidth(150);
         imageView.setFitHeight(150);
         imageView.setPreserveRatio(true);
-        
+
         if (item.getImageData() != null && item.getImageData().length > 0) {
             try {
                 ByteArrayInputStream bis = new ByteArrayInputStream(item.getImageData());
