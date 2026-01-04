@@ -6,6 +6,10 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.stage.FileChooser;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Optional;
 
 public class AdminMenuController {
@@ -67,7 +71,7 @@ public class AdminMenuController {
         Optional<MenuItem> result = dialog.showAndWait();
 
         result.ifPresent(item -> {
-            if (DatabaseManager.addMenuItem(item.getName(), item.getPrice(), item.isAvailable())) {
+            if (DatabaseManager.addMenuItem(item.getName(), item.getPrice(), item.isAvailable(), item.getImageData())) {
                 loadMenu();
                 statusLabel.setText("Menu item added successfully");
             } else {
@@ -85,7 +89,7 @@ public class AdminMenuController {
         Optional<MenuItem> result = dialog.showAndWait();
 
         result.ifPresent(item -> {
-            if (DatabaseManager.updateMenuItem(selectedItem.getId(), item.getName(), item.getPrice(), item.isAvailable())) {
+            if (DatabaseManager.updateMenuItem(selectedItem.getId(), item.getName(), item.getPrice(), item.isAvailable(), item.getImageData())) {
                 loadMenu();
                 statusLabel.setText("Menu item updated successfully");
             } else {
@@ -152,11 +156,37 @@ public class AdminMenuController {
         TextField priceField = new TextField();
         priceField.setPromptText("Price");
         CheckBox availableCheckBox = new CheckBox("Available");
+        Label imageLabel = new Label("No image selected");
+        Button browseButton = new Button("Browse Image...");
+        
+        final byte[][] selectedImageData = {null}; // Array to hold image data
+
+        browseButton.setOnAction(e -> {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Select Menu Item Image");
+            fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")
+            );
+            File selectedFile = fileChooser.showOpenDialog(dialog.getOwner());
+            if (selectedFile != null) {
+                try (FileInputStream fis = new FileInputStream(selectedFile)) {
+                    selectedImageData[0] = fis.readAllBytes();
+                    imageLabel.setText(selectedFile.getName() + " (" + (selectedImageData[0].length / 1024) + " KB)");
+                } catch (IOException ex) {
+                    imageLabel.setText("Error reading image");
+                    selectedImageData[0] = null;
+                }
+            }
+        });
 
         if (existingItem != null) {
             nameField.setText(existingItem.getName());
             priceField.setText(String.valueOf(existingItem.getPrice()));
             availableCheckBox.setSelected(existingItem.isAvailable());
+            selectedImageData[0] = existingItem.getImageData();
+            if (existingItem.getImageData() != null) {
+                imageLabel.setText("Existing image (" + (existingItem.getImageData().length / 1024) + " KB)");
+            }
         }
 
         // Layout the form
@@ -170,6 +200,9 @@ public class AdminMenuController {
         grid.add(new Label("Price:"), 0, 1);
         grid.add(priceField, 1, 1);
         grid.add(availableCheckBox, 1, 2);
+        grid.add(new Label("Image:"), 0, 3);
+        grid.add(imageLabel, 1, 3);
+        grid.add(browseButton, 2, 3);
 
         dialog.getDialogPane().setContent(grid);
 
@@ -185,7 +218,7 @@ public class AdminMenuController {
                         return null;
                     }
 
-                    return new MenuItem(name, price, available);
+                    return new MenuItem(name, price, available, selectedImageData[0]);
                 } catch (NumberFormatException e) {
                     return null;
                 }

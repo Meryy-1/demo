@@ -37,7 +37,7 @@ public class DatabaseManager {
                     hasStatus = true;
             }
 
-            // Add missing columns
+            // Add missing columns to orders table
             if (!hasOrderId) {
                 stmt.execute("ALTER TABLE orders ADD COLUMN order_id INTEGER DEFAULT 1");
                 System.out.println("Added order_id column to orders table");
@@ -49,6 +49,32 @@ public class DatabaseManager {
             if (!hasStatus) {
                 stmt.execute("ALTER TABLE orders ADD COLUMN status TEXT DEFAULT 'Pending'");
                 System.out.println("Added status column to orders table");
+            }
+
+            // Check if image_data column exists in menu_items table
+            ResultSet menuRs = stmt.executeQuery("PRAGMA table_info(menu_items)");
+            boolean hasImageData = false;
+            boolean hasImagePath = false;
+
+            while (menuRs.next()) {
+                String columnName = menuRs.getString("name");
+                if ("image_data".equals(columnName)) {
+                    hasImageData = true;
+                }
+                if ("image_path".equals(columnName)) {
+                    hasImagePath = true;
+                }
+            }
+
+            // Add image_data column if it doesn't exist
+            if (!hasImageData) {
+                stmt.execute("ALTER TABLE menu_items ADD COLUMN image_data BLOB");
+                System.out.println("Added image_data column to menu_items table");
+            }
+            
+            // Remove old image_path column if it exists (can't do in SQLite, just ignore it)
+            if (hasImagePath && !hasImageData) {
+                System.out.println("Note: image_path column exists but will use image_data instead");
             }
 
             // Populate order_id for existing records if needed
@@ -140,7 +166,8 @@ public class DatabaseManager {
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "name TEXT NOT NULL UNIQUE, " +
                 "price REAL NOT NULL, " +
-                "available INTEGER DEFAULT 1" +
+                "available INTEGER DEFAULT 1, " +
+                "image_data BLOB" +
                 ")";
 
         try (Statement stmt = connection.createStatement()) {
@@ -262,7 +289,7 @@ public class DatabaseManager {
     // Get all menu items
     public static java.util.List<MenuItem> getAllMenuItems() {
         java.util.List<MenuItem> menuItems = new java.util.ArrayList<>();
-        String query = "SELECT id, name, price, available FROM menu_items ORDER BY name";
+        String query = "SELECT id, name, price, available, image_data FROM menu_items ORDER BY name";
 
         try (Statement stmt = connection.createStatement();
                 ResultSet rs = stmt.executeQuery(query)) {
@@ -272,7 +299,8 @@ public class DatabaseManager {
                         rs.getInt("id"),
                         rs.getString("name"),
                         rs.getDouble("price"),
-                        rs.getInt("available") == 1));
+                        rs.getInt("available") == 1,
+                        rs.getBytes("image_data")));
             }
         } catch (SQLException e) {
             System.err.println("Error getting menu items: " + e.getMessage());
@@ -282,13 +310,14 @@ public class DatabaseManager {
     }
 
     // Add new menu item
-    public static boolean addMenuItem(String name, double price, boolean available) {
-        String query = "INSERT INTO menu_items (name, price, available) VALUES (?, ?, ?)";
+    public static boolean addMenuItem(String name, double price, boolean available, byte[] imageData) {
+        String query = "INSERT INTO menu_items (name, price, available, image_data) VALUES (?, ?, ?, ?)";
 
         try (PreparedStatement pstmt = connection.prepareStatement(query)) {
             pstmt.setString(1, name.trim());
             pstmt.setDouble(2, price);
             pstmt.setInt(3, available ? 1 : 0);
+            pstmt.setBytes(4, imageData);
             pstmt.executeUpdate();
             return true;
         } catch (SQLException e) {
@@ -298,14 +327,15 @@ public class DatabaseManager {
     }
 
     // Update menu item
-    public static boolean updateMenuItem(int id, String newName, double price, boolean available) {
-        String query = "UPDATE menu_items SET name = ?, price = ?, available = ? WHERE id = ?";
+    public static boolean updateMenuItem(int id, String newName, double price, boolean available, byte[] imageData) {
+        String query = "UPDATE menu_items SET name = ?, price = ?, available = ?, image_data = ? WHERE id = ?";
 
         try (PreparedStatement pstmt = connection.prepareStatement(query)) {
             pstmt.setString(1, newName.trim());
             pstmt.setDouble(2, price);
             pstmt.setInt(3, available ? 1 : 0);
-            pstmt.setInt(4, id);
+            pstmt.setBytes(4, imageData);
+            pstmt.setInt(5, id);
             int rowsAffected = pstmt.executeUpdate();
             return rowsAffected > 0;
         } catch (SQLException e) {

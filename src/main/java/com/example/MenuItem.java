@@ -13,17 +13,19 @@ public class MenuItem {
     private final SimpleStringProperty name;
     private final SimpleDoubleProperty price;
     private final SimpleBooleanProperty available;
+    private byte[] imageData;
 
-    public MenuItem(int id, String name, double price, boolean available) {
+    public MenuItem(int id, String name, double price, boolean available, byte[] imageData) {
         this.id = new SimpleIntegerProperty(id);
         this.name = new SimpleStringProperty(name);
         this.price = new SimpleDoubleProperty(price);
         this.available = new SimpleBooleanProperty(available);
+        this.imageData = imageData;
     }
 
     // For creating new items (id will be auto-generated)
-    public MenuItem(String name, double price, boolean available) {
-        this(0, name, price, available);
+    public MenuItem(String name, double price, boolean available, byte[] imageData) {
+        this(0, name, price, available, imageData);
     }
 
     // Property getters for JavaFX TableView binding
@@ -37,10 +39,12 @@ public class MenuItem {
     public String getName() { return name.get(); }
     public double getPrice() { return price.get(); }
     public boolean isAvailable() { return available.get(); }
+    public byte[] getImageData() { return imageData; }
 
     // Regular setters
     public void setId(int id) { this.id.set(id); }
     public void setName(String name) { this.name.set(name); }
     public void setPrice(double price) { this.price.set(price); }
     public void setAvailable(boolean available) { this.available.set(available); }
+    public void setImageData(byte[] imageData) { this.imageData = imageData; }
 }

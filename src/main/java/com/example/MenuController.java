@@ -11,10 +11,14 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.geometry.Pos;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 import java.util.Optional;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 public class MenuController {
 
@@ -24,57 +28,75 @@ public class MenuController {
     @FXML
     private Label statusLabel;
 
-    // Map to store menu item prices
-    private static final Map<String, Double> MENU_PRICES = new HashMap<>();
-
-    static {
-        MENU_PRICES.put("Spicy Potato", 12.00);
-        MENU_PRICES.put("Pasta", 15.00);
-        MENU_PRICES.put("Garlic Bread", 8.00);
-        MENU_PRICES.put("Burger", 14.00);
-        MENU_PRICES.put("Pizza", 18.00);
-        MENU_PRICES.put("Taco", 10.00);
-    }
-
     @FXML
     public void initialize() {
         statusLabel.setText("Browse our menu and add items to your order");
+        loadMenuFromDatabase();
     }
 
-    @FXML
-    private void handleAddItem(ActionEvent event) {
-        Button sourceButton = (Button) event.getSource();
-        Node parent = sourceButton.getParent();
+    private void loadMenuFromDatabase() {
+        menuContainer.getChildren().clear();
+        List<MenuItem> menuItems = DatabaseManager.getAllMenuItems();
 
-        // Navigate up to get the menu card VBox
-        while (parent != null && !(parent instanceof VBox)) {
-            parent = parent.getParent();
+        for (MenuItem item : menuItems) {
+            if (item.isAvailable()) {
+                VBox card = createMenuCard(item);
+                menuContainer.getChildren().add(card);
+            }
+        }
+    }
+
+    private VBox createMenuCard(MenuItem item) {
+        VBox card = new VBox(10);
+        card.setAlignment(Pos.CENTER);
+        card.setStyle("-fx-background-color: white; -fx-padding: 15; -fx-border-color: #ddd; " +
+                     "-fx-border-radius: 8; -fx-background-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);");
+        card.setPrefWidth(200);
+        card.setPrefHeight(250);
+
+        // Add image
+        ImageView imageView = new ImageView();
+        imageView.setFitWidth(150);
+        imageView.setFitHeight(150);
+        imageView.setPreserveRatio(true);
+        
+        if (item.getImageData() != null && item.getImageData().length > 0) {
+            try {
+                ByteArrayInputStream bis = new ByteArrayInputStream(item.getImageData());
+                Image image = new Image(bis);
+                imageView.setImage(image);
+            } catch (Exception e) {
+                setDefaultImage(imageView);
+            }
+        } else {
+            setDefaultImage(imageView);
         }
 
-        if (parent instanceof VBox) {
-            VBox vbox = (VBox) parent;
-            // Get all labels in the card
-            Label titleLabel = null;
-            for (Node node : vbox.getChildren()) {
-                if (node instanceof Label) {
-                    Label label = (Label) node;
-                    String style = label.getStyle();
-                    // Look for the label with larger font (title)
-                    if (style != null && style.contains("font-size: 18px")) {
-                        titleLabel = label;
-                        break;
-                    }
-                }
-            }
+        // Add item name
+        Label nameLabel = new Label(item.getName());
+        nameLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
 
-            if (titleLabel != null) {
-                String itemName = titleLabel.getText();
-                Double price = MENU_PRICES.get(itemName);
+        // Add price
+        Label priceLabel = new Label(String.format("$%.2f", item.getPrice()));
+        priceLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #27ae60;");
 
-                if (price != null) {
-                    showQuantityDialog(itemName, price);
-                }
+        // Add button
+        Button addButton = new Button("Add to Order");
+        addButton.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-padding: 8 20;");
+        addButton.setOnAction(e -> showQuantityDialog(item.getName(), item.getPrice()));
+
+        card.getChildren().addAll(imageView, nameLabel, priceLabel, addButton);
+        return card;
+    }
+
+    private void setDefaultImage(ImageView imageView) {
+        try {
+            InputStream defaultStream = getClass().getResourceAsStream("images/default-food.png");
+            if (defaultStream != null) {
+                imageView.setImage(new Image(defaultStream));
             }
+        } catch (Exception e) {
+            // No default image available
         }
     }
 

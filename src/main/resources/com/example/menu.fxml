@@ -2,7 +2,6 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.image.*?>
 <?import javafx.geometry.Insets?>
 
 <ScrollPane xmlns="http://javafx.com/javafx/8.0.171" 
@@ -25,72 +24,14 @@
         <Label text="Our Menu" style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: white; -fx-effect: dropshadow(gaussian, black, 10, 0.5, 0, 0);"/>
     </StackPane>
     
-    <FlowPane hgap="20" vgap="20" alignment="CENTER">
-        
-        <VBox alignment="CENTER" spacing="10" prefWidth="300" maxWidth="300" style="-fx-background-color: white; -fx-padding: 15px; -fx-border-color: gray;">
-            <ImageView fitWidth="250" fitHeight="180" preserveRatio="false">
-                <Image url="@images/spicy_potato.jpg"/>
-            </ImageView>
-            <Label text="Spicy Potato" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
-            <Label text="Delicious spicy potato dish"/>
-            <Label text="Price: $12.00" style="-fx-font-weight: bold;"/>
-            <Button text="Order" onAction="#handleAddItem" styleClass="orderButton"/>
-        </VBox>
-        
-        <VBox alignment="CENTER" spacing="10" prefWidth="300" maxWidth="300" style="-fx-background-color: white; -fx-padding: 15px; -fx-border-color: gray;">
-            <ImageView fitWidth="250" fitHeight="180" preserveRatio="false">
-                <Image url="@images/pasta.jpg"/>
-            </ImageView>
-            <Label text="Pasta" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
-            <Label text="Delicious pasta with sauce"/>
-            <Label text="Price: $15.00" style="-fx-font-weight: bold;"/>
-            <Button text="Order" onAction="#handleAddItem" styleClass="orderButton"/>
-        </VBox>
-        
-        <VBox alignment="CENTER" spacing="10" prefWidth="300" maxWidth="300" style="-fx-background-color: white; -fx-padding: 15px; -fx-border-color: gray;">
-            <ImageView fitWidth="250" fitHeight="180" preserveRatio="false">
-                <Image url="@images/garlic_bread.jpg"/>
-            </ImageView>
-            <Label text="Garlic Bread" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
-            <Label text="Fresh baked garlic bread"/>
-            <Label text="Price: $8.00" style="-fx-font-weight: bold;"/>
-            <Button text="Order" onAction="#handleAddItem" styleClass="orderButton"/>
-        </VBox>
-        
-        <VBox alignment="CENTER" spacing="10" prefWidth="300" maxWidth="300" style="-fx-background-color: white; -fx-padding: 15px; -fx-border-color: gray;">
-            <ImageView fitWidth="250" fitHeight="180" preserveRatio="false">
-                <Image url="@images/burger.jpg"/>
-            </ImageView>
-            <Label text="Burger" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
-            <Label text="Juicy beef burger with toppings"/>
-            <Label text="Price: $14.00" style="-fx-font-weight: bold;"/>
-            <Button text="Order" onAction="#handleAddItem" styleClass="orderButton"/>
-        </VBox>
-        
-        <VBox alignment="CENTER" spacing="10" prefWidth="300" maxWidth="300" style="-fx-background-color: white; -fx-padding: 15px; -fx-border-color: gray;">
-            <ImageView fitWidth="250" fitHeight="180" preserveRatio="false">
-                <Image url="@images/pizza.jpg"/>
-            </ImageView>
-            <Label text="Pizza" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
-            <Label text="Classic Italian pizza"/>
-            <Label text="Price: $18.00" style="-fx-font-weight: bold;"/>
-            <Button text="Order" onAction="#handleAddItem" styleClass="orderButton"/>
-        </VBox>
-        
-        <VBox alignment="CENTER" spacing="10" prefWidth="300" maxWidth="300" style="-fx-background-color: white; -fx-padding: 15px; -fx-border-color: gray;">
-            <ImageView fitWidth="250" fitHeight="180" preserveRatio="false">
-                <Image url="@images/taco.jpg"/>
-            </ImageView>
-            <Label text="Taco" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
-            <Label text="Authentic Mexican taco"/>
-            <Label text="Price: $10.00" style="-fx-font-weight: bold;"/>
-            <Button text="Order" onAction="#handleAddItem" styleClass="orderButton"/>
-        </VBox>
-        
+    <!-- Status Label -->
+    <Label fx:id="statusLabel" style="-fx-font-size: 14px; -fx-text-fill: #27ae60;"/>
+    
+    <!-- Menu Container - Dynamically populated from database -->
+    <FlowPane fx:id="menuContainer" hgap="20" vgap="20" alignment="CENTER">
+        <!-- Menu items will be loaded from database -->
     </FlowPane>
-    
-    <Label fx:id="statusLabel" text="" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 10px;"/>
-    
+
 </VBox>
 
 </ScrollPane>
