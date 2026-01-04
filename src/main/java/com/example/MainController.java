@@ -94,8 +94,30 @@ public class MainController {
             return;
         }
 
+        // Validate name contains only letters and spaces (no special characters or
+        // numbers)
+        if (!name.matches("^[a-zA-Z\\s]+$")) {
+            statusLabel.setText("Name must contain only letters and spaces");
+            statusLabel.setStyle("-fx-text-fill: #dc3545;");
+            return;
+        }
+
+        // Validate name has at least 3 letters
+        if (name.replaceAll("\\s", "").length() < 3) {
+            statusLabel.setText("Name must be at least 3 letters");
+            statusLabel.setStyle("-fx-text-fill: #dc3545;");
+            return;
+        }
+
         if (number.isEmpty()) {
             statusLabel.setText("Please enter your number");
+            statusLabel.setStyle("-fx-text-fill: #dc3545;");
+            return;
+        }
+
+        // Validate number is exactly 10 digits
+        if (!number.matches("^\\d{10}$")) {
+            statusLabel.setText("Number must be exactly 10 digits");
             statusLabel.setStyle("-fx-text-fill: #dc3545;");
             return;
         }
@@ -107,6 +129,9 @@ public class MainController {
 
     private void navigateToClientPage(String name, String number) {
         try {
+            // Save client to database
+            DatabaseManager.addClient(name, number);
+
             FXMLLoader loader = App.setRootWithController("client");
             ClientController controller = loader.getController();
             controller.setClientInfo(name, number);

@@ -45,10 +45,6 @@
                 <!-- View Reports -->
                 <Button text="📊 View Reports" styleClass="option-btn" 
                         onAction="#handleViewReports" prefWidth="300"/>
-                
-                <!-- Settings -->
-                <Button text="⚙️ Settings" styleClass="option-btn" 
-                        onAction="#handleSettings" prefWidth="300"/>
             </VBox>
         </VBox>
         
